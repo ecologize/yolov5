@@ -1,4 +1,18 @@
+# What is the purpose of this YOLOv5 fork?
+
+This is a fork of the [YOLOv5 repo](https://github.com/ultralytics/yolov5) that simplifies running [MegaDetector](https://github.com/microsoft/CameraTraps/blob/main/megadetector.md).  This fork differs from the [original YOLOv5 repo](https://github.com/ultralytics/yolov5) in two ways:
+
+1. It is forked from a [specific commit](https://github.com/ultralytics/yolov5/commit/c23a441c9df7ca9b1f275e8c8719c949269160d1/) of the original repo.  This commit supports models trained in late 2021 (when MegaDetector v5 was trained); more recent commits of YOLOv5 are not compatible with this model.  Of course, this doesn't require forking the repo; one can just check out a specific commit of the YOLOv5 repo, but having a repo whose HEAD is the correct commit shortens the instructions for setting up MegaDetector by just a bit.  But more importantly...
+
+2. YOLOv5's inference functions abandon NMS (non-max suppression) on each image after a certain time (see YOLOv5 [issue 7390](https://github.com/ultralytics/yolov5/issues/7390)).  While this doesn't matter much in practice, it does mean that someone running MDv5 on a slower or more-heavily-loaded computer could get *slightly* different results than someone running on a computer that can keep up.  We saw this very rarely in practice, but it's enough of an issue for proper debugging that we made a very small change to this fork: long-running NMS is now just a warning, it won't actually abandon NMS. 
+
+Everything else in this README is identical to the original.
+
+
+# Back to your regularly-scheduled YOLOv5 README...
+
 <div align="center">
+
 <p>
    <a align="left" href="https://ultralytics.com/yolov5" target="_blank">
    <img width="850" src="https://github.com/ultralytics/yolov5/releases/download/v1.0/splash.jpg"></a>
@@ -13,6 +27,7 @@
    <a href="https://www.kaggle.com/ultralytics/yolov5"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open In Kaggle"></a>
    <a href="https://join.slack.com/t/ultralytics/shared_invite/zt-w29ei8bp-jczz7QYUmDtgo6r6KcMIAg"><img src="https://img.shields.io/badge/Slack-Join_Forum-blue.svg?logo=slack" alt="Join Forum"></a>
 </div>
+
 
 <br>
 <p>
