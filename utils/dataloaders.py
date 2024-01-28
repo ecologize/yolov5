@@ -595,6 +595,11 @@ class LoadImagesAndLabels(Dataset):
             # Load image
             img, (h0, w0), (h, w) = self.load_image(index)
 
+            if img is None:
+                fn = self.im_files[index]
+                print('*** __getitem__: load_image failure for {} ***'.format(fn))
+                return None, None, fn, None
+            
             # Letterbox
             shape = self.batch_shapes[self.batch[index]] if self.rect else self.img_size  # final letterboxed shape
             img, ratio, pad = letterbox(img, shape, auto=False, scaleup=self.augment)
@@ -658,8 +663,15 @@ class LoadImagesAndLabels(Dataset):
             if fn.exists():  # load npy
                 im = np.load(fn)
             else:  # read image
-                im = cv2.imread(f)  # BGR
-                assert im is not None, f'Image Not Found {f}'
+                try:
+                    im = cv2.imread(f)  # BGR
+                except Exception as e:
+                    print('*** cv2 imread error: {} ***'.format(str(e)))
+                    im = None
+                # assert im is not None, f'Image Not Found {f}'
+                if im is None:
+                    print('*** load_image: imread failure for {} ***'.format(f))
+                    return None, (None,None), (None,None)
             h0, w0 = im.shape[:2]  # orig hw
             r = self.img_size / max(h0, w0)  # ratio
             if r != 1:  # if sizes are not equal
@@ -812,8 +824,16 @@ class LoadImagesAndLabels(Dataset):
     @staticmethod
     def collate_fn(batch):
         im, label, path, shapes = zip(*batch)  # transposed
+        assert isinstance(path,tuple)
+        
+        # If any image in this batch is bad, invalidate the batch, indicating which image was bad
+        for i_image,enum_im in enumerate(im):
+            if enum_im is None:
+                print('*** collate_fn: null image at {}, invalidating batch ***'.format(
+                    path[i_image]), flush=True)
+                return None, None, path, path[i_image]
         for i, lb in enumerate(label):
-            lb[:, 0] = i  # add target image index for build_targets()
+            lb[:, 0] = i  # add target image index for build_targets()            
         return torch.stack(im, 0), torch.cat(label, 0), path, shapes
 
     @staticmethod

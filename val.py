@@ -55,6 +55,15 @@ def save_one_txt(predn, save_conf, shape, file):
             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
 
+def save_one_failed_json(jdict, path, error_string='unknown'):
+    image_id = int(path.stem) if path.stem.isnumeric() else path.stem
+    jdict.append({
+        'image_id': image_id,
+        'category_id': -1,
+        'bbox': None,
+        'score': None,
+        'error': error_string})
+
 def save_one_json(predn, jdict, path, class_map):
     # Save one JSON result {"image_id": 42, "category_id": 18, "bbox": [258.15, 41.29, 348.26, 243.78], "score": 0.236}
     image_id = int(path.stem) if path.stem.isnumeric() else path.stem
@@ -191,6 +200,19 @@ def run(
     callbacks.run('on_val_start')
     pbar = tqdm(dataloader, desc=s, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')  # progress bar
     for batch_i, (im, targets, paths, shapes) in enumerate(pbar):
+        
+        if im is None:
+            failed_image_fn = shapes
+            print('*** null image: {} ***'.format(failed_image_fn))
+            if save_json:
+                # It may have just been one bad image in this batch, but mark them all as errors
+                for path in paths:
+                    save_one_failed_json(jdict, Path(path), 
+                                         error_string='batch image read error for {}'.format(failed_image_fn))
+            callbacks.run('on_val_batch_end')
+            
+            continue
+        
         callbacks.run('on_val_batch_start')
         t1 = time_sync()
         if cuda:
